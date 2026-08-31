@@ -25,8 +25,7 @@ if (!fs.existsSync('./uploads/themes')) {
 }
 
 // 🌐 MongoDB Connection
-const MONGO_URI = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/trendvibe'; 
-mongoose.connect(MONGO_URI)
+const MONGO_URI = process.env.MONGO_URI || 'mongoose.connect(process.env.MONGO_URI)'
   .then(() => {
     console.log('MongoDB Connected Successfully! 🎉');
     initializeSettings(); 
