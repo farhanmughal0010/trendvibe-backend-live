@@ -11,4 +11,8 @@ const orderSchema = new mongoose.Schema({
   status: { type: String, default: 'Processing' }
 }, { timestamps: true });
 
+<<<<<<< HEAD
 module.exports = mongoose.model('Order', orderSchema);
+=======
+module.exports = mongoose.model('Order', orderSchema);
+>>>>>>> 36a5fee7ab8195b4a1e1f9d144814ae5f6530a1e
