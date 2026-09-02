@@ -139,8 +139,4 @@ router.get('/api/collections', async (req, res) => {
   }
 });
 
-<<<<<<< HEAD
 export default router;
-=======
-export default router;
->>>>>>> 36a5fee7ab8195b4a1e1f9d144814ae5f6530a1e
