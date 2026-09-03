@@ -105,10 +105,10 @@ async function initializeSettings() {
 app.post('/api/login', (req, res) => {
   const { username, password } = req.body;
 
-  const adminUser = process.env.ADMIN_USER || 'admin';
-  const adminPass = process.env.ADMIN_PASS || 'TrendvibeSecure2026';
-  const staffUser = process.env.STAFF_USER || 'staff';
-  const staffPass = process.env.STAFF_PASS || 'TrendvibeStaff2026';
+  const adminUser = process.env.ADMIN_USER || 'Admin';
+  const adminPass = process.env.ADMIN_PASS || 'Trendvibe@2026';
+  const staffUser = process.env.STAFF_USER || 'Staff';
+  const staffPass = process.env.STAFF_PASS || 'Staff@12345';
 
   if (username === adminUser && password === adminPass) {
     return res.json({ success: true, role: 'admin', message: 'Admin login successful!' });
