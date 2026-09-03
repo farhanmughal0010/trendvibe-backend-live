@@ -8,7 +8,7 @@ import unzipper from 'unzipper'; // 🟢 Unzipper import kiya theme extract karn
 import collectionRoutes from './routes/collectionRoutes.js'; 
 
 const app = express();
-const PORT = 5000;
+const PORT = process.env.PORT || 5000;
 
 app.use(cors());
 app.use(express.json());
@@ -99,6 +99,25 @@ async function initializeSettings() {
     console.error('Error initializing settings:', err);
   }
 }
+
+
+// 🔐 🛡️ ADMIN & STAFF LOGIN API (Using Render Environment Variables)
+app.post('/api/login', (req, res) => {
+  const { username, password } = req.body;
+
+  const adminUser = process.env.ADMIN_USER || 'admin';
+  const adminPass = process.env.ADMIN_PASS || 'TrendvibeSecure2026';
+  const staffUser = process.env.STAFF_USER || 'staff';
+  const staffPass = process.env.STAFF_PASS || 'TrendvibeStaff2026';
+
+  if (username === adminUser && password === adminPass) {
+    return res.json({ success: true, role: 'admin', message: 'Admin login successful!' });
+  } else if (username === staffUser && password === staffPass) {
+    return res.json({ success: true, role: 'staff', message: 'Staff login successful!' });
+  } else {
+    return res.status(401).json({ success: false, message: 'Invalid Username or Password! Access Denied.' });
+  }
+});
 
 
 // 🌐 1️⃣ GET API: Active settings read karne ke liye (Client & Admin dono use karenge)
