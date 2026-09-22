@@ -23,7 +23,11 @@ const storage = new CloudinaryStorage({
   },
 });
 
-const upload = multer({ storage: storage });
+// 🛡️ Multer Middleware with 2MB File Size Limit & Multi-Image (Max 10) Support
+const upload = multer({
+  storage: storage,
+  limits: { fileSize: 2 * 1024 * 1024 } // 2MB limit per image
+});
 
 /* ==========================================
    📦 PRODUCTS APIS
@@ -40,14 +44,18 @@ router.get('/api/products', async (req, res) => {
   }
 });
 
-// 2. Add New Product
-router.post('/api/products/add', upload.single('image'), async (req, res) => {
+// 2. Add New Product (Multi-Image Support up to 10 images)
+router.post('/api/products/add', upload.array('images', 10), async (req, res) => {
   try {
     const { name, price, costPrice, stock, category, description } = req.body;
-    if (!req.file) return res.status(400).json({ success: false, message: 'Please upload an image!' });
+    
+    // Check if files exist
+    if (!req.files || req.files.length === 0) {
+      return res.status(400).json({ success: false, message: 'Please upload at least one image!' });
+    }
 
-    // req.file.path mein Cloudinary ka direct secure URL aa jata hai
-    const imageUrl = req.file.path;
+    // Map all uploaded images secure URLs into an array
+    const imageUrls = req.files.map(file => file.path);
 
     const newProduct = new Product({
       name,
@@ -56,18 +64,23 @@ router.post('/api/products/add', upload.single('image'), async (req, res) => {
       stock: Number(stock || 0),
       category: category.trim(),
       description,
-      image: imageUrl
+      images: imageUrls,          // Array of image URLs
+      image: imageUrls[0]         // Main/Primary image fallback compatibility
     });
 
     await newProduct.save();
     res.status(201).json({ success: true, message: 'Product added successfully!', data: newProduct });
   } catch (error) {
+    // Handling Multer file size error explicitly
+    if (error.code === 'LIMIT_FILE_SIZE') {
+      return res.status(400).json({ success: false, message: 'Har image ka size 2MB se kam hona chahiye!' });
+    }
     res.status(500).json({ success: false, message: error.message });
   }
 });
 
-// 3. Update Existing Product Info
-router.put('/api/products/update/:id', upload.single('image'), async (req, res) => {
+// 3. Update Existing Product Info (Multi-Image Support)
+router.put('/api/products/update/:id', upload.array('images', 10), async (req, res) => {
   try {
     const productId = req.params.id;
     const { name, price, costPrice, stock, category, description } = req.body;
@@ -77,10 +90,11 @@ router.put('/api/products/update/:id', upload.single('image'), async (req, res) 
       return res.status(404).json({ success: false, message: "Product not found!" });
     }
 
-    let imagePath = existingProduct.image;
-    // Agar nayi file upload ki gai hai toh Cloudinary ka naya URL assign hoga
-    if (req.file) {
-      imagePath = req.file.path;
+    let imageUrls = existingProduct.images || [existingProduct.image];
+    
+    // Agar nayi files upload ki gai hain toh naye URLs assign honge
+    if (req.files && req.files.length > 0) {
+      imageUrls = req.files.map(file => file.path);
     }
 
     let updateData = { 
@@ -90,7 +104,8 @@ router.put('/api/products/update/:id', upload.single('image'), async (req, res) 
       stock: stock !== undefined ? Number(stock) : existingProduct.stock, 
       category: category ? category.trim() : existingProduct.category, 
       description: description || existingProduct.description,
-      image: imagePath
+      images: imageUrls,
+      image: imageUrls[0] // Primary image update
     };
 
     const updatedProduct = await Product.findByIdAndUpdate(
@@ -103,6 +118,9 @@ router.put('/api/products/update/:id', upload.single('image'), async (req, res) 
 
   } catch (error) {
     console.error("Backend Update Error Detail:", error); 
+    if (error.code === 'LIMIT_FILE_SIZE') {
+      return res.status(400).json({ success: false, message: 'Har image ka size 2MB se kam hona chahiye!' });
+    }
     return res.status(500).json({ success: false, message: error.message });
   }
 });
@@ -146,7 +164,7 @@ router.post('/api/collections', async (req, res) => {
 // 2. Fetch All Custom Collections
 router.get('/api/collections', async (req, res) => {
   try {
-    const categories = await Category.find();
+    const categories = await Category.main ? await Category.find() : await Category.find();
     const categoryNames = categories.map(cat => cat.name);
     res.status(200).json({ success: true, data: categoryNames });
   } catch (err) {
