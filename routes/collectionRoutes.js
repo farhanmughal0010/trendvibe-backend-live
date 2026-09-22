@@ -2,7 +2,7 @@ import express from 'express';
 import multer from 'multer';
 import path from 'path';
 import { Product } from '../models/Product.js'; 
-import {Category} from '../models/Category.js'; // ✅ FIXED: Removed curly braces to match default export and prevent crash
+import { Category } from '../models/Category.js';
 
 const router = express.Router();
 
@@ -21,7 +21,20 @@ const upload = multer({ storage: storage });
 router.get('/api/products', async (req, res) => {
   try {
     const products = await Product.find().sort({ createdAt: -1 });
-    res.status(200).json({ success: true, data: products });
+    
+    // Explicitly ensure full backend URL is attached to every product image
+    const formattedProducts = products.map(product => {
+      let imagePath = product.image;
+      if (imagePath && !imagePath.startsWith('http')) {
+        imagePath = `https://trendvibe-backend-live.onrender.com${imagePath}`;
+      }
+      return {
+        ...product.toObject(),
+        image: imagePath
+      };
+    });
+
+    res.status(200).json({ success: true, data: formattedProducts });
   } catch (error) {
     res.status(500).json({ success: false, message: 'Failed to fetch products.' });
   }
@@ -44,20 +57,29 @@ router.post('/api/products/add', upload.single('image'), async (req, res) => {
     });
 
     await newProduct.save();
-    res.status(201).json({ success: true, message: 'Product added successfully!', data: newProduct });
+
+    let imagePath = newProduct.image;
+    if (imagePath && !imagePath.startsWith('http')) {
+      imagePath = `https://trendvibe-backend-live.onrender.com${imagePath}`;
+    }
+
+    const responseData = {
+      ...newProduct.toObject(),
+      image: imagePath
+    };
+
+    res.status(201).json({ success: true, message: 'Product added successfully!', data: responseData });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
 });
 
 // 3. Update Existing Product Info
-// ✅ FIXED: Added missing '/api' prefix to match frontend fetch requests correctly
 router.put('/api/products/update/:id', upload.single('image'), async (req, res) => {
   try {
     const productId = req.params.id;
     const { name, price, costPrice, stock, category, description } = req.body;
     
-    // Pehle existing product fetch karein taake agar image change na ho toh purani secure rahe
     const existingProduct = await Product.findById(productId);
     if (!existingProduct) {
       return res.status(404).json({ success: false, message: "Product not found!" });
@@ -84,7 +106,17 @@ router.put('/api/products/update/:id', upload.single('image'), async (req, res) 
       { new: true, runValidators: true }
     );
 
-    return res.status(200).json({ success: true, message: 'Product updated successfully!', data: updatedProduct });
+    let finalImage = updatedProduct.image;
+    if (finalImage && !finalImage.startsWith('http')) {
+      finalImage = `https://trendvibe-backend-live.onrender.com${finalImage}`;
+    }
+
+    const responseData = {
+      ...updatedProduct.toObject(),
+      image: finalImage
+    };
+
+    return res.status(200).json({ success: true, message: 'Product updated successfully!', data: responseData });
 
   } catch (error) {
     console.error("Backend Update Error Detail:", error); 
