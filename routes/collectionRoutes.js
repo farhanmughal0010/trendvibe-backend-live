@@ -1,16 +1,28 @@
 import express from 'express';
 import multer from 'multer';
-import path from 'path';
+import { v2 as cloudinary } from 'cloudinary';
+import { CloudinaryStorage } from 'multer-storage-cloudinary';
 import { Product } from '../models/Product.js'; 
 import { Category } from '../models/Category.js';
 
 const router = express.Router();
 
-// 📁 Multer Configuration
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => { cb(null, 'uploads/'); },
-  filename: (req, file, cb) => { cb(null, `${Date.now()}${path.extname(file.originalname)}`); }
+// ☁️ Cloudinary Configuration (Render Environment Variables uthayega)
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET
 });
+
+// 📁 Multer Storage Configuration for Cloudinary
+const storage = new CloudinaryStorage({
+  cloudinary: cloudinary,
+  params: {
+    folder: 'trendvibe_products', // Cloudinary par yeh folder ban jayega
+    allowed_formats: ['jpg', 'png', 'jpeg', 'webp'],
+  },
+});
+
 const upload = multer({ storage: storage });
 
 /* ==========================================
@@ -21,20 +33,8 @@ const upload = multer({ storage: storage });
 router.get('/api/products', async (req, res) => {
   try {
     const products = await Product.find().sort({ createdAt: -1 });
-    
-    // Explicitly ensure full backend URL is attached to every product image
-    const formattedProducts = products.map(product => {
-      let imagePath = product.image;
-      if (imagePath && !imagePath.startsWith('http')) {
-        imagePath = `https://trendvibe-backend-live.onrender.com${imagePath}`;
-      }
-      return {
-        ...product.toObject(),
-        image: imagePath
-      };
-    });
-
-    res.status(200).json({ success: true, data: formattedProducts });
+    // Cloudinary URLs pehle se complete hote hain, mazeed kuch lagane ki zaroorat nahi
+    res.status(200).json({ success: true, data: products });
   } catch (error) {
     res.status(500).json({ success: false, message: 'Failed to fetch products.' });
   }
@@ -46,6 +46,9 @@ router.post('/api/products/add', upload.single('image'), async (req, res) => {
     const { name, price, costPrice, stock, category, description } = req.body;
     if (!req.file) return res.status(400).json({ success: false, message: 'Please upload an image!' });
 
+    // req.file.path mein Cloudinary ka direct secure URL aa jata hai
+    const imageUrl = req.file.path;
+
     const newProduct = new Product({
       name,
       price: Number(price),
@@ -53,22 +56,11 @@ router.post('/api/products/add', upload.single('image'), async (req, res) => {
       stock: Number(stock || 0),
       category: category.trim(),
       description,
-      image: `/uploads/${req.file.filename}`
+      image: imageUrl
     });
 
     await newProduct.save();
-
-    let imagePath = newProduct.image;
-    if (imagePath && !imagePath.startsWith('http')) {
-      imagePath = `https://trendvibe-backend-live.onrender.com${imagePath}`;
-    }
-
-    const responseData = {
-      ...newProduct.toObject(),
-      image: imagePath
-    };
-
-    res.status(201).json({ success: true, message: 'Product added successfully!', data: responseData });
+    res.status(201).json({ success: true, message: 'Product added successfully!', data: newProduct });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
@@ -86,8 +78,9 @@ router.put('/api/products/update/:id', upload.single('image'), async (req, res) 
     }
 
     let imagePath = existingProduct.image;
+    // Agar nayi file upload ki gai hai toh Cloudinary ka naya URL assign hoga
     if (req.file) {
-      imagePath = `/uploads/${req.file.filename}`;
+      imagePath = req.file.path;
     }
 
     let updateData = { 
@@ -106,17 +99,7 @@ router.put('/api/products/update/:id', upload.single('image'), async (req, res) 
       { new: true, runValidators: true }
     );
 
-    let finalImage = updatedProduct.image;
-    if (finalImage && !finalImage.startsWith('http')) {
-      finalImage = `https://trendvibe-backend-live.onrender.com${finalImage}`;
-    }
-
-    const responseData = {
-      ...updatedProduct.toObject(),
-      image: finalImage
-    };
-
-    return res.status(200).json({ success: true, message: 'Product updated successfully!', data: responseData });
+    return res.status(200).json({ success: true, message: 'Product updated successfully!', data: updatedProduct });
 
   } catch (error) {
     console.error("Backend Update Error Detail:", error); 
