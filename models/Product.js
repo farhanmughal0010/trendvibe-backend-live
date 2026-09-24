@@ -7,15 +7,15 @@ const productSchema = new mongoose.Schema({
   stock: { type: Number, required: true, default: 0 },
   category: { type: String, required: true, trim: true },
   description: { type: String, required: true },
-  image: { 
+  // 🟢 Multiple images ke liye array define kar diya hai
+  images: [{ 
     type: String, 
-    required: true,
     get: function(v) {
       if (!v) return v;
       if (v.startsWith('http')) return v;
       return `https://trendvibe-backend-live.onrender.com${v}`;
     }
-  },
+  }],
 }, { 
   timestamps: true,
   toJSON: { getters: true },
