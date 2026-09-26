@@ -23,10 +23,10 @@ const storage = new CloudinaryStorage({
   },
 });
 
-// 🛡️ Multer Middleware with 2MB File Size Limit & Multi-Image (Max 10) Support
+// 🛡️ Multer Middleware with 5MB File Size Limit & Multi-Image (Max 10) Support
 const upload = multer({
   storage: storage,
-  limits: { fileSize: 2 * 1024 * 1024 } // 2MB limit per image
+  limits: { fileSize: 5 * 1024 * 1024 } // 🧮 5MB limit per image (5MB = 5 * 1024 * 1024 bytes)
 });
 
 /* ==========================================
@@ -37,7 +37,6 @@ const upload = multer({
 router.get('/api/products', async (req, res) => {
   try {
     const products = await Product.find().sort({ createdAt: -1 });
-    // Cloudinary URLs pehle se complete hote hain, mazeed kuch lagane ki zaroorat nahi
     res.status(200).json({ success: true, data: products });
   } catch (error) {
     res.status(500).json({ success: false, message: 'Failed to fetch products.' });
@@ -73,7 +72,7 @@ router.post('/api/products/add', upload.array('images', 10), async (req, res) =>
   } catch (error) {
     // Handling Multer file size error explicitly
     if (error.code === 'LIMIT_FILE_SIZE') {
-      return res.status(400).json({ success: false, message: 'Har image ka size 2MB se kam hona chahiye!' });
+      return res.status(400).json({ success: false, message: 'Har image ka size 5MB se kam hona chahiye!' });
     }
     res.status(500).json({ success: false, message: error.message });
   }
@@ -119,7 +118,7 @@ router.put('/api/products/update/:id', upload.array('images', 10), async (req, r
   } catch (error) {
     console.error("Backend Update Error Detail:", error); 
     if (error.code === 'LIMIT_FILE_SIZE') {
-      return res.status(400).json({ success: false, message: 'Har image ka size 2MB se kam hona chahiye!' });
+      return res.status(400).json({ success: false, message: 'Har image ka size 5MB se kam hona chahiye!' });
     }
     return res.status(500).json({ success: false, message: error.message });
   }
@@ -164,7 +163,7 @@ router.post('/api/collections', async (req, res) => {
 // 2. Fetch All Custom Collections
 router.get('/api/collections', async (req, res) => {
   try {
-    const categories = await Category.main ? await Category.find() : await Category.find();
+    const categories = await Category.find();
     const categoryNames = categories.map(cat => cat.name);
     res.status(200).json({ success: true, data: categoryNames });
   } catch (err) {
