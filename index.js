@@ -104,7 +104,7 @@ async function initializeSettings() {
 }
 
 
-// 🔐 🛡️ ADMIN & STAFF LOGIN API
+// 🔐 🛡️️ ADMIN & STAFF LOGIN API
 app.post('/api/login', (req, res) => {
   const { username, password } = req.body;
 
@@ -290,7 +290,7 @@ app.get('/api/orders/customer', async (req, res) => {
   }
 });
 
-// 🟢 POST API: Resend Support Email Route (Updated with Trendvibelifestyle@gmail.com)
+// 🟢 POST API: Resend Support Email Route (Updated to mydigit3.online@gmail.com)
 app.post('/api/support/send', async (req, res) => {
   const { name, email, message } = req.body;
 
@@ -301,7 +301,7 @@ app.post('/api/support/send', async (req, res) => {
   try {
     const data = await resend.emails.send({
       from: 'Trendvibe Support <onboarding@resend.dev>',
-      to: 'Trendvibelifestyle@gmail.com',
+      to: 'mydigit3.online@gmail.com',
       subject: `New Support Request from ${name || 'Customer'}`,
       text: `You have received a new message from your store support form:\n\nName: ${name}\nEmail: ${email}\nMessage: ${message}`
     });
