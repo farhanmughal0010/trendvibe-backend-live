@@ -6,9 +6,9 @@ import fs from 'fs';
 import multer from 'multer'; 
 import unzipper from 'unzipper'; 
 import collectionRoutes from './routes/collectionRoutes.js'; 
-import { Resend } from 'resend'; // 🟢 Resend import kiya emails ke liye
+import { Resend } from 'resend'; 
 
-// 🟢 Resend Initialize (Yahan apni API key paste karein)
+// 🟢 Resend Initialize
 const resend = new Resend(process.env.RESEND_API_KEY);
 
 const app = express();
@@ -290,7 +290,7 @@ app.get('/api/orders/customer', async (req, res) => {
   }
 });
 
-// 🟢 POST API: Resend Support Email Route
+// 🟢 POST API: Resend Support Email Route (Updated with Trendvibelifestyle@gmail.com)
 app.post('/api/support/send', async (req, res) => {
   const { name, email, message } = req.body;
 
@@ -301,7 +301,7 @@ app.post('/api/support/send', async (req, res) => {
   try {
     const data = await resend.emails.send({
       from: 'Trendvibe Support <onboarding@resend.dev>',
-      to: 'support@Trendvibe.lifestyle',
+      to: 'Trendvibelifestyle@gmail.com',
       subject: `New Support Request from ${name || 'Customer'}`,
       text: `You have received a new message from your store support form:\n\nName: ${name}\nEmail: ${email}\nMessage: ${message}`
     });
